@@ -1,16 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from views._db_connect import get_client, query_all
+from views._db_connect import query_all
 
 @st.cache_data(ttl=3600)
 def load_schools():
     return pd.DataFrame(query_all("schools", "*"))
 
-@st.cache_data(ttl=3600)
 def load_school_data(school_code):
-    meals = query_all("meals", "*", filters={"school_code": school_code})
-    nutrition = query_all("nutrition", "*", filters={"school_code": school_code})
+    meals = query_all("meals", "dish_name, meal_date, meal_type", filters={"school_code": school_code})
+    nutrition = query_all("nutrition", "meal_date, calories", filters={"school_code": school_code})
     return pd.DataFrame(meals), pd.DataFrame(nutrition)
 
 def show():
@@ -31,12 +30,12 @@ def show():
     if df_meals.empty:
         st.warning("해당 학교의 급식 데이터가 없습니다.")
         return
+    df_nutrition["calories"] = pd.to_numeric(df_nutrition["calories"], errors="coerce")
+    avg_cal = df_nutrition["calories"].mean()
     col1, col2, col3 = st.columns(3)
     col1.metric("총 급식 횟수", f"{len(df_nutrition):,}회")
     col2.metric("총 메뉴 수", f"{len(df_meals):,}개")
-    if not df_nutrition.empty:
-        df_nutrition["calories"] = pd.to_numeric(df_nutrition["calories"], errors="coerce")
-        col3.metric("평균 칼로리", f"{df_nutrition['calories'].mean():.0f} kcal")
+    col3.metric("평균 칼로리", f"{avg_cal:.0f} kcal" if pd.notna(avg_cal) else "데이터 없음")
     st.divider()
     col1, col2 = st.columns(2)
     with col1:
