@@ -30,8 +30,15 @@ SYSTEM_PROMPT = """너는 한국 요리 전문가야.
 - JSON 배열만 반환, 다른 텍스트 절대 금지"""
 
 def get_unclassified():
-    res = supabase.table("dish_classification").select("dish_name_raw").lte("id", 2160).is_("ingredients_detail", "null").execute()
-    return [r["dish_name_raw"] for r in res.data if r["dish_name_raw"]]
+    all_dishes = []
+    page = 0
+    while True:
+        res = supabase.table("dish_classification").select("dish_name_raw").lte("id", 2160).is_("ingredients_detail", "null").range(page*1000, (page+1)*1000-1).execute()
+        all_dishes.extend([r["dish_name_raw"] for r in res.data if r["dish_name_raw"]])
+        if len(res.data) < 1000:
+            break
+        page += 1
+    return all_dishes
 
 def fill_batch(dishes):
     dish_list = "\n".join([f"- {d}" for d in dishes])
