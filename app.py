@@ -6,9 +6,18 @@ from views import _menu_analysis as menu_analysis
 from views import _nutrition as nutrition
 from views import _allergy as allergy
 from views import _cost as cost
+from views import _supply as supply
 
 st.sidebar.title("🍱 급식 분석")
-menu = st.sidebar.radio("메뉴 선택", ["📊 전체 통계", "🪖 부대별 분석", "🥗 메뉴 분석", "🧪 영양성분 분석", "⚠️ 알레르기 분석", "💰 원가 분석"])
+menu = st.sidebar.radio("메뉴 선택", [
+    "📊 전체 통계",
+    "🪖 부대별 분석",
+    "🥗 메뉴 분석",
+    "🧪 영양성분 분석",
+    "⚠️ 알레르기 분석",
+    "💰 원가 분석",
+    "📦 수급량 분석"
+])
 
 if menu == "📊 전체 통계":
     overview.show()
@@ -22,3 +31,5 @@ elif menu == "⚠️ 알레르기 분석":
     allergy.show()
 elif menu == "💰 원가 분석":
     cost.show()
+elif menu == "📦 수급량 분석":
+    supply.show()
