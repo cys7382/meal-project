@@ -8,6 +8,7 @@ from views import _nutrition as nutrition
 from views import _allergy as allergy
 from views import _cost as cost
 from views import _supply as supply
+from views import _compare as compare
 
 st.sidebar.title("🔗 FoodLink")
 st.sidebar.caption("학교 급식 식재료 수급 매칭 플랫폼")
@@ -23,8 +24,7 @@ menu = st.sidebar.radio("", [
 if menu == "📦 재료 수급량 분석":
     supply.show()
 elif menu == "🗺️ 지역별 비교":
-    st.title("🗺️ 지역별 비교")
-    st.info("make_supply_stats.py 완료 후 활성화됩니다.")
+    compare.show()
 elif menu == "📊 전체 현황":
     overview.show()
 elif menu == "📁 기타 분석":
