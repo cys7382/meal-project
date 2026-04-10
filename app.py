@@ -1,5 +1,6 @@
 import streamlit as st
-st.set_page_config(page_title="급식 분석 대시보드", page_icon="🍱", layout="wide")
+st.set_page_config(page_title="FoodLink", page_icon="🔗", layout="wide")
+
 from views import _overview as overview
 from views import _school as school
 from views import _menu_analysis as menu_analysis
@@ -8,28 +9,39 @@ from views import _allergy as allergy
 from views import _cost as cost
 from views import _supply as supply
 
-st.sidebar.title("🍱 급식 분석")
-menu = st.sidebar.radio("메뉴 선택", [
-    "📊 전체 통계",
-    "🪖 부대별 분석",
-    "🥗 메뉴 분석",
-    "🧪 영양성분 분석",
-    "⚠️ 알레르기 분석",
-    "💰 원가 분석",
-    "📦 수급량 분석"
+st.sidebar.title("🔗 FoodLink")
+st.sidebar.caption("학교 급식 식재료 수급 매칭 플랫폼")
+st.sidebar.divider()
+
+menu = st.sidebar.radio("", [
+    "📦 재료 수급량 분석",
+    "🗺️ 지역별 비교",
+    "📊 전체 현황",
+    "📁 기타 분석",
 ])
 
-if menu == "📊 전체 통계":
-    overview.show()
-elif menu == "🪖 부대별 분석":
-    school.show()
-elif menu == "🥗 메뉴 분석":
-    menu_analysis.show()
-elif menu == "🧪 영양성분 분석":
-    nutrition.show()
-elif menu == "⚠️ 알레르기 분석":
-    allergy.show()
-elif menu == "💰 원가 분석":
-    cost.show()
-elif menu == "📦 수급량 분석":
+if menu == "📦 재료 수급량 분석":
     supply.show()
+elif menu == "🗺️ 지역별 비교":
+    st.title("🗺️ 지역별 비교")
+    st.info("make_supply_stats.py 완료 후 활성화됩니다.")
+elif menu == "📊 전체 현황":
+    overview.show()
+elif menu == "📁 기타 분석":
+    sub = st.selectbox("분석 선택", [
+        "🪖 부대별 분석",
+        "🥗 메뉴 분석",
+        "🧪 영양성분 분석",
+        "⚠️ 알레르기 분석",
+        "💰 원가 분석",
+    ])
+    if sub == "🪖 부대별 분석":
+        school.show()
+    elif sub == "🥗 메뉴 분석":
+        menu_analysis.show()
+    elif sub == "🧪 영양성분 분석":
+        nutrition.show()
+    elif sub == "⚠️ 알레르기 분석":
+        allergy.show()
+    elif sub == "💰 원가 분석":
+        cost.show()
