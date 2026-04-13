@@ -31,7 +31,8 @@ SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름
 EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
 
 def load_school_meals(school_code):
-    meals = query_all("meals", "dish_name, meal_date", filters={"school_code": school_code})
+    from views._db_connect import query_with_retry
+    meals = query_with_retry("meals", "dish_name, meal_date", filters={"school_code": school_code})
     return pd.DataFrame(meals)
 
 def show():
