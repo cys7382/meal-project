@@ -34,3 +34,28 @@ def query_all(table, columns="*", filters=None):
             break
         page += 1
     return all_data
+
+@st.cache_data(ttl=3600)
+def query_with_retry(table, columns="*", filters=None):
+    import time
+    client = get_client()
+    all_data = []
+    page = 0
+    while True:
+        for attempt in range(3):
+            try:
+                q = client.table(table).select(columns)
+                if filters:
+                    for col, val in filters.items():
+                        q = q.eq(col, val)
+                res = q.range(page*1000, (page+1)*1000-1).execute()
+                all_data.extend(res.data)
+                if len(res.data) < 1000:
+                    return all_data
+                page += 1
+                break
+            except Exception as e:
+                if attempt == 2:
+                    return all_data
+                time.sleep(0.5)
+    return all_data
