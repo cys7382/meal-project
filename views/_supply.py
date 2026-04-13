@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 from views._db_connect import query_all
 
+EXCLUDE_INGREDIENTS = {"물"}
+
 @st.cache_data(ttl=3600)
 def load_supply():
     return pd.DataFrame(query_all("supply_stats", "*"))
@@ -13,16 +15,16 @@ def show():
         df = load_supply()
 
     if df.empty:
-        st.info("수급량 데이터가 없습니다. make_supply_stats.py를 실행해주세요.")
+        st.info("수급량 데이터가 없습니다.")
         return
 
-    # 지역 필터
+    df = df[~df["ingredient_name"].isin(EXCLUDE_INGREDIENTS)]
+
     regions = sorted(df["region"].unique().tolist())
     selected_region = st.selectbox("지역 선택", ["전체"] + regions)
     if selected_region != "전체":
         df = df[df["region"] == selected_region]
 
-    # 재료 검색
     search = st.text_input("재료명 검색 (예: 닭고기)")
 
     st.divider()
@@ -45,7 +47,6 @@ def show():
         if search:
             ing_df = df[df["ingredient_name"].str.contains(search, na=False)]
         else:
-            # 가장 많이 쓰인 재료 기본 표시
             top_ing = annual["재료명"].iloc[0] if not annual.empty else ""
             ing_df = df[df["ingredient_name"] == top_ing]
             st.caption(f"기본 표시: {top_ing} (검색으로 변경 가능)")
