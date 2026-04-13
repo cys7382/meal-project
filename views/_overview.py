@@ -4,7 +4,7 @@ import plotly.express as px
 from views._db_connect import get_client, query_all
 import json
 
-EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
+EXCLUDE_INGREDIENTS = {"물"}
 
 @st.cache_data(ttl=3600)
 def load_schools():
