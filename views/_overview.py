@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from views._db_connect import get_client, query_all
+import json
+
+EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
 
 @st.cache_data(ttl=3600)
 def load_schools():
@@ -33,20 +36,26 @@ def show():
 
     # 카테고리 필터
     categories = ["전체"] + sorted(df_classified["category"].dropna().unique().tolist())
-    selected_cat = st.selectbox("재료 카테고리 선택", categories)
+    selected_cat = st.selectbox("카테고리 선택", categories)
 
     period = st.radio("기간 선택", ["1년 전체", "계절별"], horizontal=True)
+    if period == "계절별":
+        season = st.selectbox("계절 선택", ["봄", "여름", "가을", "겨울"])
+        count_col = SEASON_COL[season]
+    else:
+        count_col = "count"
 
     st.subheader("🏆 인기 메뉴 TOP 30")
-    if period == "1년 전체":
-        top = df_stats.nlargest(30, "count")[["dish_name", "count"]]
-        top.columns = ["메뉴명", "등장횟수"]
-    else:
-        season = st.selectbox("계절 선택", ["봄", "여름", "가을", "겨울"])
-        col = SEASON_COL[season]
-        top = df_stats.nlargest(30, col)[["dish_name", col]]
-        top.columns = ["메뉴명", "등장횟수"]
 
+    # 카테고리 필터 적용
+    if selected_cat != "전체":
+        cat_menus = df_classified[df_classified["category"] == selected_cat]["dish_name_raw"].tolist()
+        filtered_stats = df_stats[df_stats["dish_name"].isin(cat_menus)]
+    else:
+        filtered_stats = df_stats
+
+    top = filtered_stats.nlargest(30, count_col)[["dish_name", count_col]]
+    top.columns = ["메뉴명", "등장횟수"]
     fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
                  color="등장횟수", color_continuous_scale="Oranges")
     fig.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
@@ -59,8 +68,6 @@ def show():
         st.info("재료 데이터가 없습니다.")
         return
 
-    # 재료 집계
-    import json
     ingredient_counts = {}
     for _, row in df_classified.iterrows():
         if selected_cat != "전체" and row["category"] != selected_cat:
@@ -71,12 +78,13 @@ def show():
         try:
             items = json.loads(detail) if isinstance(detail, str) else detail
             dish_name = row["dish_name_raw"]
-            dish_count = df_stats[df_stats["dish_name"] == dish_name]["count"].values
+            dish_count = df_stats[df_stats["dish_name"] == dish_name][count_col].values
             multiplier = int(dish_count[0]) if len(dish_count) > 0 else 1
             for item in items:
                 name = item.get("name", "")
-                if name:
-                    ingredient_counts[name] = ingredient_counts.get(name, 0) + multiplier
+                if not name or name in EXCLUDE_INGREDIENTS:
+                    continue
+                ingredient_counts[name] = ingredient_counts.get(name, 0) + multiplier
         except:
             continue
 
