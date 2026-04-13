@@ -55,7 +55,7 @@ def show():
     st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
-    st.subheader("📈 급식 건수")
+    st.subheader("📈 한 끼 권장량 대비 급식 현황")
     nutrient_sel = st.selectbox("영양소 선택", [NUTRIENT_LABELS[n] for n in nutrients])
     nutrient_col = nutrients[[NUTRIENT_LABELS[n] for n in nutrients].index(nutrient_sel)]
     unit = NUTRIENT_UNITS[nutrient_col]
