@@ -12,11 +12,18 @@ def load_schools():
 def load_classified():
     return pd.DataFrame(query_all("dish_classification", "dish_name_raw, category, ingredients_detail"))
 
-def load_school_meals(school_code):
-    client_data = query_all("meals", "dish_name, meal_date", filters={"school_code": school_code})
-    return pd.DataFrame(client_data)
+@st.cache_data(ttl=3600)
+def get_schools_with_data():
+    # 실제 급식 데이터 있는 학교코드만
+    data = query_all("meals", "school_code")
+    return set(r["school_code"] for r in data)
 
 SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름",8:"여름",9:"가을",10:"가을",11:"가을",12:"겨울"}
+EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
+
+def load_school_meals(school_code):
+    meals = query_all("meals", "dish_name, meal_date", filters={"school_code": school_code})
+    return pd.DataFrame(meals)
 
 def show():
     st.title("🪖 부대별 분석")
@@ -24,6 +31,12 @@ def show():
     if df_schools.empty:
         st.warning("학교 데이터가 없습니다.")
         return
+
+    # 급식 데이터 있는 학교만 필터링
+    with st.spinner("학교 목록 불러오는 중..."):
+        valid_codes = get_schools_with_data()
+
+    df_schools = df_schools[df_schools["school_code"].isin(valid_codes)]
 
     col1, col2 = st.columns(2)
     with col1:
@@ -84,8 +97,9 @@ def show():
                 continue
             for item in items:
                 name = item.get("name", "")
-                if name:
-                    ingredient_counts[name] = ingredient_counts.get(name, 0) + multiplier
+                if not name or name in EXCLUDE_INGREDIENTS:
+                    continue
+                ingredient_counts[name] = ingredient_counts.get(name, 0) + multiplier
         except:
             continue
 
