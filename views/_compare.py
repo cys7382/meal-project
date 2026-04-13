@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 from views._db_connect import query_all
 
+EXCLUDE_INGREDIENTS = {"물"}
+
 @st.cache_data(ttl=3600)
 def load_supply():
     data = query_all("supply_stats", "region, ingredient_name, week_number, total_amount_g")
@@ -29,12 +31,13 @@ def show():
         st.info("수급량 데이터가 없습니다.")
         return
 
+    df = df[~df["ingredient_name"].isin(EXCLUDE_INGREDIENTS)]
+
     regions = sorted(df["region"].unique().tolist())
     if len(regions) < 2:
         st.info("지역 데이터가 2개 이상 필요합니다.")
         return
 
-    # 연간 총량 계산
     annual = df.groupby(["region", "ingredient_name"])["total_amount_g"].sum().reset_index()
     annual["total_amount_kg"] = (annual["total_amount_g"] / 1000).round(1)
     annual["per_school_kg"] = annual.apply(
