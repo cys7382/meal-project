@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import json
-from views._db_connect import query_all
+from views._db_connect import query_all, get_client
 
 @st.cache_data(ttl=3600)
 def load_schools():
@@ -13,12 +13,19 @@ def load_classified():
     return pd.DataFrame(query_all("dish_classification", "dish_name_raw, category, ingredients_detail"))
 
 @st.cache_data(ttl=3600)
-@st.cache_data(ttl=3600)
 def get_schools_with_data():
-    from views._db_connect import get_client
+    # menu_stats에 있는 학교코드 기반으로 확인 (이미 집계된 데이터 활용)
     client = get_client()
-    res = client.table("meals").select("school_code").execute()
-    return set(r["school_code"] for r in res.data)
+    res = client.table("meals").select("school_code").limit(1000).execute()
+    codes = set(r["school_code"] for r in res.data)
+    page = 1
+    while len(res.data) == 1000:
+        res = client.table("meals").select("school_code").range(page*1000, (page+1)*1000-1).execute()
+        codes.update(r["school_code"] for r in res.data)
+        page += 1
+        if page > 300:  # 최대 30만건까지만 확인
+            break
+    return codes
 
 SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름",8:"여름",9:"가을",10:"가을",11:"가을",12:"겨울"}
 EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
@@ -33,12 +40,6 @@ def show():
     if df_schools.empty:
         st.warning("학교 데이터가 없습니다.")
         return
-
-    # 급식 데이터 있는 학교만 필터링
-    with st.spinner("학교 목록 불러오는 중..."):
-        valid_codes = get_schools_with_data()
-
-    df_schools = df_schools[df_schools["school_code"].isin(valid_codes)]
 
     col1, col2 = st.columns(2)
     with col1:
