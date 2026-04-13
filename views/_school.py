@@ -13,10 +13,12 @@ def load_classified():
     return pd.DataFrame(query_all("dish_classification", "dish_name_raw, category, ingredients_detail"))
 
 @st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600)
 def get_schools_with_data():
-    # 실제 급식 데이터 있는 학교코드만
-    data = query_all("meals", "school_code")
-    return set(r["school_code"] for r in data)
+    from views._db_connect import get_client
+    client = get_client()
+    res = client.table("meals").select("school_code").execute()
+    return set(r["school_code"] for r in res.data)
 
 SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름",8:"여름",9:"가을",10:"가을",11:"가을",12:"겨울"}
 EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
