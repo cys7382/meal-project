@@ -12,7 +12,24 @@ def load_schools():
 
 @st.cache_data(ttl=3600)
 def load_menu_stats():
-    return pd.DataFrame(query_all("menu_stats", "dish_name, count, spring_count, summer_count, fall_count, winter_count"))
+    client = get_client()
+    all_data = []
+    page = 0
+    import time
+    while True:
+        for attempt in range(3):
+            try:
+                res = client.table("menu_stats").select("dish_name, count, spring_count, summer_count, fall_count, winter_count").range(page*1000, (page+1)*1000-1).execute()
+                all_data.extend(res.data)
+                if len(res.data) < 1000:
+                    return pd.DataFrame(all_data)
+                page += 1
+                break
+            except:
+                if attempt == 2:
+                    return pd.DataFrame(all_data)
+                time.sleep(1)
+    return pd.DataFrame(all_data)
 
 @st.cache_data(ttl=3600)
 def load_classified():
