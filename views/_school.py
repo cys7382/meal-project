@@ -12,28 +12,34 @@ def load_schools():
 def load_classified():
     return pd.DataFrame(query_all("dish_classification", "dish_name_raw, category, ingredients_detail"))
 
-@st.cache_data(ttl=3600)
-def get_schools_with_data():
-    # menu_stats에 있는 학교코드 기반으로 확인 (이미 집계된 데이터 활용)
-    client = get_client()
-    res = client.table("meals").select("school_code").limit(1000).execute()
-    codes = set(r["school_code"] for r in res.data)
-    page = 1
-    while len(res.data) == 1000:
-        res = client.table("meals").select("school_code").range(page*1000, (page+1)*1000-1).execute()
-        codes.update(r["school_code"] for r in res.data)
-        page += 1
-        if page > 300:  # 최대 30만건까지만 확인
-            break
-    return codes
-
 SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름",8:"여름",9:"가을",10:"가을",11:"가을",12:"겨울"}
-EXCLUDE_INGREDIENTS = {"물", "소금", "설탕"}
+EXCLUDE_INGREDIENTS = {"물"}
+
+REGION_MAP = {
+    "전체": None,
+    "서울": "B10",
+    "부산": "C10",
+}
 
 def load_school_meals(school_code):
-    from views._db_connect import query_with_retry
-    meals = query_with_retry("meals", "dish_name, meal_date", filters={"school_code": school_code})
-    return pd.DataFrame(meals)
+    import time
+    client = get_client()
+    all_data = []
+    page = 0
+    while True:
+        for attempt in range(3):
+            try:
+                res = client.table("meals").select("dish_name, meal_date").eq("school_code", school_code).range(page*1000, (page+1)*1000-1).execute()
+                all_data.extend(res.data)
+                if len(res.data) < 1000:
+                    return pd.DataFrame(all_data)
+                page += 1
+                break
+            except:
+                if attempt == 2:
+                    return pd.DataFrame(all_data)
+                time.sleep(1)
+    return pd.DataFrame(all_data)
 
 def show():
     st.title("🪖 부대별 분석")
@@ -42,12 +48,22 @@ def show():
         st.warning("학교 데이터가 없습니다.")
         return
 
+    # 지역 필터
+    region_sel = st.selectbox("지역 선택", ["전체", "서울", "부산"], index=0)
+    edu_code = REGION_MAP[region_sel]
+
+    if edu_code:
+        filtered_schools = df_schools[df_schools["edu_office_code"] == edu_code]
+    else:
+        filtered_schools = df_schools
+
     col1, col2 = st.columns(2)
     with col1:
-        school_type = st.selectbox("학교 종류", ["전체"] + sorted(df_schools["school_type"].dropna().unique().tolist()))
+        school_type = st.selectbox("학교 종류", ["전체"] + sorted(filtered_schools["school_type"].dropna().unique().tolist()))
     with col2:
-        filtered = df_schools if school_type == "전체" else df_schools[df_schools["school_type"] == school_type]
-        school_name = st.selectbox("부대 선택", sorted(filtered["school_name"].dropna().tolist()))
+        if school_type != "전체":
+            filtered_schools = filtered_schools[filtered_schools["school_type"] == school_type]
+        school_name = st.selectbox("부대 선택", sorted(filtered_schools["school_name"].dropna().tolist()))
 
     school_code = df_schools[df_schools["school_name"] == school_name]["school_code"].values[0]
 
