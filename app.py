@@ -11,21 +11,21 @@ from views import _supply as supply
 from views import _compare as compare
 
 st.sidebar.title("🔗 FoodLink")
-st.sidebar.caption("학교 급식 식재료 수급 매칭 플랫폼")
+st.sidebar.caption("급식 식재료 수급 매칭 플랫폼")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("", [
-    "📦 재료 수급량 분석",
+    "📦 재료 수급량",
     "🗺️ 지역별 비교",
-    "📊 전체 현황",
+    "📊 많이 나온 메뉴 & 많이 쓰인 재료",
     "📁 기타 분석",
 ])
 
-if menu == "📦 재료 수급량 분석":
+if menu == "📦 재료 수급량":
     supply.show()
 elif menu == "🗺️ 지역별 비교":
     compare.show()
-elif menu == "📊 전체 현황":
+elif menu == "📊 많이 나온 메뉴 & 많이 쓰인 재료":
     overview.show()
 elif menu == "📁 기타 분석":
     sub = st.selectbox("분석 선택", [
