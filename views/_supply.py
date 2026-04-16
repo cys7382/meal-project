@@ -61,12 +61,14 @@ def show():
             st.plotly_chart(fig2, use_container_width=True)
 
     st.divider()
-    st.subheader("📊 전체 재료별 주간 수요 테이블")
+    st.subheader("📊 재료별 주간 수요 테이블 (상위 30개)")
 
     if search:
         table_df = df[df["ingredient_name"].str.contains(search, na=False)]
     else:
-        table_df = df
+        # 연간 총량 기준 상위 30개만
+        top30 = df.groupby("ingredient_name")["total_amount_g"].sum().nlargest(30).index.tolist()
+        table_df = df[df["ingredient_name"].isin(top30)]
 
     pivot = table_df.pivot_table(
         index="ingredient_name",
@@ -75,9 +77,16 @@ def show():
         aggfunc="sum"
     ).fillna(0)
 
+    # 연간 총량 기준으로 정렬
+    pivot["연간총량"] = pivot.sum(axis=1)
+    pivot = pivot.sort_values("연간총량", ascending=False).drop(columns=["연간총량"])
+
     pivot.columns = [f"{c}주" for c in pivot.columns]
     pivot.index.name = "재료명"
     pivot_kg = (pivot / 1000).round(1)
+
+    st.dataframe(pivot_kg, use_container_width=True, height=600)
+    st.caption("단위: kg / 검색 시 해당 재료만 표시")
 
     st.dataframe(pivot_kg, use_container_width=True, height=400)
     st.caption("단위: kg")
