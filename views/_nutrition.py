@@ -27,7 +27,7 @@ def load_nutrition():
 def show():
     st.title("🧪 영양성분 분석")
     st.caption("※ 최근 10,000건 기준 / 한 끼 급식 권장량 대비 충족률")
-    with st.spinner("데이터 불러오는 중..."):
+    with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df = load_nutrition()
     if df.empty:
         st.warning("영양 데이터가 없습니다.")
