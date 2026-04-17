@@ -73,7 +73,7 @@ def show():
         df_classified = load_classified()
 
     # 모드 선택
-    mode = st.radio("보기 모드", ["📊  통계", "🪖 부대별 분석"], horizontal=True)
+    mode = st.radio("보기 모드", ["📊 전체 통계", "🪖 부대별 분석"], horizontal=True)
 
     st.divider()
 
@@ -98,7 +98,7 @@ def show():
         else:
             filtered_stats = df_stats
 
-        st.subheader("🏆 인기 메뉴 TOP 30")
+        st.subheader("🏆 가장 많이 나온 메뉴 TOP 30")
         top = filtered_stats.nlargest(30, count_col)[["dish_name", count_col]]
         top.columns = ["메뉴명", "등장횟수"]
         fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
@@ -107,7 +107,7 @@ def show():
         st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
-        st.subheader("🧂 인기 재료 TOP 30")
+        st.subheader("🧂 가장 많이 나온 재료 TOP 30")
 
         ingredient_counts = {}
         for _, row in df_classified.iterrows():
@@ -179,7 +179,7 @@ def show():
         else:
             df_filtered = df_meals
 
-        st.subheader("🏆 인기 메뉴 TOP 20")
+        st.subheader("🏆 가장 많이 나온 메뉴 TOP 20")
         top = df_filtered["dish_name"].value_counts().head(20).reset_index()
         top.columns = ["메뉴명", "등장횟수"]
         fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
