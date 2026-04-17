@@ -27,7 +27,7 @@ def show():
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("🏆 전체 인기 메뉴 TOP 30")
+        st.subheader("🏆 가장 많이 나온 메뉴 TOP 30")
         top = df_stats.nlargest(30, count_col)[["dish_name", count_col]]
         top.columns = ["메뉴명", "등장횟수"]
         fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
@@ -36,7 +36,7 @@ def show():
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        st.subheader("📂 카테고리별 인기 메뉴")
+        st.subheader("📂 카테고리별 많이 나온 메뉴")
         if not df_classified.empty:
             category = st.selectbox("카테고리 선택", sorted(df_classified["category"].dropna().unique()))
             cat_menus = df_classified[df_classified["category"] == category]["dish_name_raw"].tolist()
