@@ -98,25 +98,27 @@ def show():
 
     st.divider()
     st.subheader("🌟 지역 특색 재료")
-    tab1, tab2 = st.tabs(["🟠 서울 특색", "🟢 부산 특색"])
 
     if "서울" in pivot_annual.columns and "부산" in pivot_annual.columns:
         filtered = pivot_annual[(pivot_annual["서울"] > 1) & (pivot_annual["부산"] > 1)].copy()
         filtered["서울비율"] = (filtered["서울"] / filtered["부산"]).round(1)
         filtered["부산비율"] = (filtered["부산"] / filtered["서울"]).round(1)
 
-        with tab1:
-            seoul_top = filtered.nlargest(15, "서울비율")[["서울", "부산", "서울비율"]].reset_index()
-            seoul_top.columns = ["재료명", "서울(kg)", "부산(kg)", "서울/부산 비율"]
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("🟠 서울 특색")
+            seoul_top = filtered.nlargest(20, "서울비율")[["서울비율"]].reset_index()
+            seoul_top.columns = ["재료명", "서울/부산 비율"]
             fig2 = px.bar(seoul_top, x="서울/부산 비율", y="재료명", orientation="h",
                          color="서울/부산 비율", color_continuous_scale="Oranges")
             fig2.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
             st.plotly_chart(fig2, use_container_width=True)
             st.caption("서울이 부산보다 상대적으로 많이 쓰는 재료")
 
-        with tab2:
-            busan_top = filtered.nlargest(15, "부산비율")[["서울", "부산", "부산비율"]].reset_index()
-            busan_top.columns = ["재료명", "서울(kg)", "부산(kg)", "부산/서울 비율"]
+        with col2:
+            st.subheader("🟢 부산 특색")
+            busan_top = filtered.nlargest(20, "부산비율")[["부산비율"]].reset_index()
+            busan_top.columns = ["재료명", "부산/서울 비율"]
             fig3 = px.bar(busan_top, x="부산/서울 비율", y="재료명", orientation="h",
                          color="부산/서울 비율", color_continuous_scale="Teal")
             fig3.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
