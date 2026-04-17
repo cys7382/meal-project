@@ -14,7 +14,7 @@ def load_allergy_data():
 def show():
     st.title("⚠️ 알레르기 분석")
     st.caption("※ 50,000건 샘플 기준")
-    with st.spinner("데이터 불러오는 중..."):
+    with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df = load_allergy_data()
     if df.empty:
         st.warning("알레르기 데이터가 없습니다.")
