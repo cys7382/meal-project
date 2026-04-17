@@ -79,19 +79,32 @@ def show():
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        st.subheader("📈 부산/서울 비율 비교 TOP 20")
-        if "부산/서울(%)" in pivot_annual.columns:
-            ratio_df = pivot_annual["부산/서울(%)"].reset_index()
-            ratio_df.columns = ["재료명", "비율(%)"]
-            ratio_df = ratio_df[ratio_df["비율(%)"] > 0].nlargest(20, "비율(%)")
-            fig2 = px.bar(ratio_df, x="비율(%)", y="재료명", orientation="h",
-                         color="비율(%)", color_continuous_scale="RdYlGn",
-                         range_color=[0, 150])
-            fig2.add_vline(x=100, line_dash="dash", line_color="gray",
-                          annotation_text="서울 기준 100%")
-            fig2.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
-            st.plotly_chart(fig2, use_container_width=True)
+        st.subheader("🌟 지역 특색 재료")
+        tab1, tab2 = st.tabs(["🟠 서울 특색", "🟢 부산 특색"])
 
+        if "서울" in pivot_annual.columns and "부산" in pivot_annual.columns:
+            # 최소 사용량 필터 (너무 적은 재료 제외)
+            filtered = pivot_annual[(pivot_annual["서울"] > 1) & (pivot_annual["부산"] > 1)].copy()
+            filtered["서울비율"] = (filtered["서울"] / filtered["부산"]).round(1)
+            filtered["부산비율"] = (filtered["부산"] / filtered["서울"]).round(1)
+
+            with tab1:
+                seoul_top = filtered.nlargest(15, "서울비율")[["서울", "부산", "서울비율"]].reset_index()
+                seoul_top.columns = ["재료명", "서울(kg)", "부산(kg)", "서울/부산 비율"]
+                fig2 = px.bar(seoul_top, x="서울/부산 비율", y="재료명", orientation="h",
+                             color="서울/부산 비율", color_continuous_scale="Oranges")
+                fig2.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
+                st.plotly_chart(fig2, use_container_width=True)
+                st.caption("서울이 부산보다 상대적으로 많이 쓰는 재료")
+
+            with tab2:
+                busan_top = filtered.nlargest(15, "부산비율")[["서울", "부산", "부산비율"]].reset_index()
+                busan_top.columns = ["재료명", "서울(kg)", "부산(kg)", "부산/서울 비율"]
+                fig3 = px.bar(busan_top, x="부산/서울 비율", y="재료명", orientation="h",
+                             color="부산/서울 비율", color_continuous_scale="Teal")
+                fig3.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
+                st.plotly_chart(fig3, use_container_width=True)
+                st.caption("부산이 서울보다 상대적으로 많이 쓰는 재료")
     st.divider()
     st.subheader("📅 주간 수요 비교")
     ing_weekly = df[df["ingredient_name"] == selected_ing].groupby(
