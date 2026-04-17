@@ -13,17 +13,17 @@ st.sidebar.caption("급식 식재료 수급 매칭 플랫폼")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("", [
-    "📦 재료 수급량 분석",
+    "📦 시기별 재료 사용량",
     "🗺️ 지역별 비교",
-    "📊 메뉴 및 재료 분석",
+    "📊 부대별 메뉴 분석",
     "📁 기타 분석",
 ])
 
-if menu == "📦 재료 수급량 분석":
+if menu == "📦 시기별 재료 사용량":
     supply.show()
 elif menu == "🗺️ 지역별 비교":
     compare.show()
-elif menu == "📊 메뉴 및 재료 분석":
+elif menu == "📊 부대별 메뉴 분석":
     overview.show()
 elif menu == "📁 기타 분석":
     sub = st.selectbox("분석 선택", [
