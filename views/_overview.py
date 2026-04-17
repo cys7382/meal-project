@@ -8,7 +8,7 @@ from views._db_connect import get_client, query_all
 EXCLUDE_INGREDIENTS = {"물"}
 SEASON_MAP = {1:"겨울",2:"겨울",3:"봄",4:"봄",5:"봄",6:"여름",7:"여름",8:"여름",9:"가을",10:"가을",11:"가을",12:"겨울"}
 SEASON_COL = {"봄": "spring_count", "여름": "summer_count", "가을": "fall_count", "겨울": "winter_count"}
-REGION_MAP = {"전체": None, "서울 전체": "B10", "부산 전체": "C10"}
+REGION_MAP = {"전체": None, "서울": "B10", "부산": "C10"}
 
 @st.cache_data(ttl=3600)
 def load_schools():
