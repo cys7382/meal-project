@@ -67,7 +67,7 @@ def load_school_meals(school_code):
 def show():
     st.title("📊 메뉴 및 재료 분석")
 
-    with st.spinner("데이터 불러오는 중..."):
+    with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df_schools = load_schools()
         df_stats = load_menu_stats()
         df_classified = load_classified()
@@ -156,7 +156,7 @@ def show():
 
         school_code = df_schools[df_schools["school_name"] == school_name]["school_code"].values[0]
 
-        with st.spinner(f"{school_name} 데이터 불러오는 중..."):
+        with st.spinner(f"{school_name} 데이터 불러오는 중... 잠시만 기다려주세요 ☕"):
             df_meals = load_school_meals(school_code)
 
         if df_meals.empty:
