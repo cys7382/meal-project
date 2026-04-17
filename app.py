@@ -8,8 +8,8 @@ from views import _cost as cost
 from views import _supply as supply
 from views import _compare as compare
 
-st.sidebar.title("🔗 FoodLink")
-st.sidebar.caption("학교 급식 식재료 수급 매칭 플랫폼")
+st.sidebar.title("🔗 FoodChain")
+st.sidebar.caption("급식 식재료 수급 매칭 플랫폼")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("", [
