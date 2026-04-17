@@ -51,7 +51,7 @@ def load_school_meals(school_code):
         for attempt in range(3):
             try:
                 res = client.table("meals").select("dish_name, meal_date").eq(
-                    "school_code", school_code
+                    "school_code", str(school_code)
                 ).range(page*1000, (page+1)*1000-1).execute()
                 all_data.extend(res.data)
                 if len(res.data) < 1000:
