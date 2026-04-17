@@ -30,7 +30,7 @@ def show():
         nums = allergy_str.replace("(","").replace(")","").split(".")
         return any(n.strip() in selected_nums for n in nums)
     filtered = df[df["allergy_info"].apply(has_allergy)]
-    result = filtered["dish_name"].value_counts().reset_index()
-    result.columns = ["메뉴명", "등장횟수"]
+    filtered = df[df["allergy_info"].apply(has_allergy)]
+    result = filtered["dish_name"].drop_duplicates().reset_index(drop=True)
     st.subheader(f"'{', '.join(selected)}' 포함 메뉴 ({len(result)}개)")
-    st.dataframe(result, use_container_width=True, height=500)
+    st.dataframe(result.rename("메뉴명"), use_container_width=True, height=500)
