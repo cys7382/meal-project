@@ -12,7 +12,10 @@ REGION_MAP = {"전체": None, "서울": "B10", "부산": "C10"}
 
 @st.cache_data(ttl=3600)
 def load_schools():
-    return pd.DataFrame(query_all("schools", "*"))
+    all_schools = pd.DataFrame(query_all("schools", "*"))
+    valid = pd.DataFrame(query_all("valid_schools", "school_code"))
+    valid_codes = set(valid["school_code"])
+    return all_schools[all_schools["school_code"].isin(valid_codes)]
 
 @st.cache_data(ttl=3600)
 def load_menu_stats():
