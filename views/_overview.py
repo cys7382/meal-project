@@ -43,6 +43,14 @@ def load_menu_stats():
 def load_classified():
     return pd.DataFrame(query_all("dish_classification", "dish_name_raw, category, ingredients_detail"))
 
+@st.cache_data(ttl=3600)
+def load_region_menu_stats(edu_code):
+    return pd.DataFrame(query_all(
+        "region_menu_stats",
+        "dish_name, count, spring_count, summer_count, fall_count, winter_count",
+        filters={"edu_office_code": edu_code}
+    ))
+
 def load_school_meals(school_code):
     client = get_client()
     for outer_attempt in range(3):
@@ -73,24 +81,19 @@ def load_school_meals(school_code):
 
 
 def show_global_charts(df_stats, df_classified, count_col, selected_cat):
-    """전체(또는 지역 전체) 통계 차트"""
+    """전체(또는 지역 전체) 통계 차트 - 계산 먼저, 렌더링 한꺼번에"""
     if selected_cat != "전체":
         cat_menus = df_classified[df_classified["category"] == selected_cat]["dish_name_raw"].tolist()
         filtered_stats = df_stats[df_stats["dish_name"].isin(cat_menus)]
     else:
         filtered_stats = df_stats
 
-    st.subheader("가장 많이 나온 메뉴 TOP 20")
-    top = filtered_stats.nlargest(20, count_col)[["dish_name", count_col]]
+    # 메뉴 TOP 20 계산
+    top = filtered_stats.nlargest(20, count_col)[["dish_name", count_col]].copy()
     top.columns = ["메뉴명", "등장횟수"]
-    fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
-                 color="등장횟수", color_continuous_scale="Oranges")
-    fig.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
-    st.plotly_chart(fig, use_container_width=True)
 
-    st.divider()
-    st.subheader("가장 많이 나온 재료 TOP 20")
-
+    # 재료 집계 계산
+    stats_lookup = df_stats.set_index("dish_name")[count_col].to_dict()
     ingredient_counts = {}
     for _, row in df_classified.iterrows():
         if selected_cat != "전체" and row["category"] != selected_cat:
@@ -100,9 +103,9 @@ def show_global_charts(df_stats, df_classified, count_col, selected_cat):
             continue
         try:
             items = json.loads(detail) if isinstance(detail, str) else detail
-            dish_name = row["dish_name_raw"]
-            dish_count = df_stats[df_stats["dish_name"] == dish_name][count_col].values
-            multiplier = int(dish_count[0]) if len(dish_count) > 0 else 1
+            multiplier = int(stats_lookup.get(row["dish_name_raw"], 0))
+            if multiplier == 0:
+                continue
             for item in items:
                 name = item.get("name", "")
                 if not name or name in EXCLUDE_INGREDIENTS:
@@ -111,9 +114,18 @@ def show_global_charts(df_stats, df_classified, count_col, selected_cat):
         except:
             continue
 
-    if ingredient_counts:
-        ing_df = pd.DataFrame(list(ingredient_counts.items()), columns=["재료명", "사용횟수"])
-        ing_df = ing_df.nlargest(20, "사용횟수")
+    ing_df = pd.DataFrame(list(ingredient_counts.items()), columns=["재료명", "사용횟수"]).nlargest(20, "사용횟수") if ingredient_counts else None
+
+    # 한꺼번에 렌더링
+    st.subheader("가장 많이 나온 메뉴 TOP 20")
+    fig = px.bar(top, x="등장횟수", y="메뉴명", orientation="h",
+                 color="등장횟수", color_continuous_scale="Oranges")
+    fig.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("가장 많이 나온 재료 TOP 20")
+    if ing_df is not None:
         fig2 = px.bar(ing_df, x="사용횟수", y="재료명", orientation="h",
                       color="사용횟수", color_continuous_scale="Greens")
         fig2.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
@@ -121,50 +133,55 @@ def show_global_charts(df_stats, df_classified, count_col, selected_cat):
 
 
 def show_school_charts(df_classified, df_filtered, selected_cat):
-    """특정 부대 통계 차트"""
+    """특정 부대 통계 차트 - 계산 먼저, 렌더링 한꺼번에"""
     dish_counts = df_filtered["dish_name"].value_counts().to_dict()
 
     if selected_cat != "전체":
-        cat_menus = df_classified[df_classified["category"] == selected_cat]["dish_name_raw"].tolist()
+        cat_menus = set(df_classified[df_classified["category"] == selected_cat]["dish_name_raw"].tolist())
         filtered_dish_counts = {k: v for k, v in dish_counts.items() if k in cat_menus}
     else:
+        cat_menus = None
         filtered_dish_counts = dish_counts
 
-    st.subheader("가장 많이 나온 메뉴 TOP 20")
+    # 메뉴 TOP 20 계산
     top_items = sorted(filtered_dish_counts.items(), key=lambda x: x[1], reverse=True)[:20]
-    if top_items:
-        top_df = pd.DataFrame(top_items, columns=["메뉴명", "등장횟수"])
-        fig3 = px.bar(top_df, x="등장횟수", y="메뉴명", orientation="h",
-                     color="등장횟수", color_continuous_scale="Oranges")
-        fig3.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
-        st.plotly_chart(fig3, use_container_width=True)
+    top_df = pd.DataFrame(top_items, columns=["메뉴명", "등장횟수"]) if top_items else None
 
-    st.subheader("가장 많이 나온 재료 TOP 20")
-    ingredient_counts2 = {}
+    # 재료 집계 계산
+    ingredient_counts = {}
     for _, row in df_classified.iterrows():
-        if selected_cat != "전체" and row["category"] != selected_cat:
+        if cat_menus is not None and row["dish_name_raw"] not in cat_menus:
             continue
         detail = row["ingredients_detail"]
         if not detail:
             continue
         try:
             items = json.loads(detail) if isinstance(detail, str) else detail
-            dish_name = row["dish_name_raw"]
-            multiplier = dish_counts.get(dish_name, 0)
+            multiplier = dish_counts.get(row["dish_name_raw"], 0)
             if multiplier == 0:
                 continue
             for item in items:
                 name = item.get("name", "")
                 if not name or name in EXCLUDE_INGREDIENTS:
                     continue
-                ingredient_counts2[name] = ingredient_counts2.get(name, 0) + multiplier
+                ingredient_counts[name] = ingredient_counts.get(name, 0) + multiplier
         except:
             continue
 
-    if ingredient_counts2:
-        ing_df2 = pd.DataFrame(list(ingredient_counts2.items()), columns=["재료명", "사용횟수"])
-        ing_df2 = ing_df2.nlargest(20, "사용횟수")
-        fig4 = px.bar(ing_df2, x="사용횟수", y="재료명", orientation="h",
+    ing_df = pd.DataFrame(list(ingredient_counts.items()), columns=["재료명", "사용횟수"]).nlargest(20, "사용횟수") if ingredient_counts else None
+
+    # 한꺼번에 렌더링
+    st.subheader("가장 많이 나온 메뉴 TOP 20")
+    if top_df is not None:
+        fig3 = px.bar(top_df, x="등장횟수", y="메뉴명", orientation="h",
+                     color="등장횟수", color_continuous_scale="Oranges")
+        fig3.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
+        st.plotly_chart(fig3, use_container_width=True)
+
+    st.divider()
+    st.subheader("가장 많이 나온 재료 TOP 20")
+    if ing_df is not None:
+        fig4 = px.bar(ing_df, x="사용횟수", y="재료명", orientation="h",
                       color="사용횟수", color_continuous_scale="Greens")
         fig4.update_layout(yaxis={"categoryorder": "total ascending"}, height=500)
         st.plotly_chart(fig4, use_container_width=True)
@@ -188,7 +205,7 @@ def show():
     st.subheader("🪖 부대별 분석")
 
     # 지역 선택
-    region_sel = st.selectbox("지역 선택", ["전체", "서울 전체", "부산 전체"], index=0, key="school_region")
+    region_sel = st.selectbox("지역 선택", ["전체", "서울", "부산"], index=0, key="school_region")
     edu_code = REGION_MAP[region_sel]
 
     if edu_code:
@@ -229,7 +246,12 @@ def show():
 
     # -전체- 선택 시 전체(또는 지역) 통계
     if school_name == "-전체-":
-        show_global_charts(df_stats, df_classified, count_col, selected_cat)
+        if edu_code:
+            with st.spinner("지역 데이터 불러오는 중..."):
+                stats_to_use = load_region_menu_stats(edu_code)
+        else:
+            stats_to_use = df_stats
+        show_global_charts(stats_to_use, df_classified, count_col, selected_cat)
 
     # 특정 부대 선택 시 부대별 통계
     else:
