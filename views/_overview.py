@@ -65,7 +65,7 @@ def load_school_meals(school_code):
     return pd.DataFrame(all_data)
 
 def show():
-    st.title("📊 전체 현황")
+    st.title("📊 메뉴 및 재료 분석")
 
     with st.spinner("데이터 불러오는 중..."):
         df_schools = load_schools()
@@ -73,7 +73,7 @@ def show():
         df_classified = load_classified()
 
     # 모드 선택
-    mode = st.radio("보기 모드", ["📊 전체 통계", "🪖 부대별 분석"], horizontal=True)
+    mode = st.radio("보기 모드", ["📊  통계", "🪖 부대별 분석"], horizontal=True)
 
     st.divider()
 
@@ -148,7 +148,7 @@ def show():
 
         col1, col2 = st.columns(2)
         with col1:
-            school_type = st.selectbox("학교 종류", ["전체"] + sorted(filtered_schools["school_type"].dropna().unique().tolist()))
+            school_type = st.selectbox("부대 종류", ["전체"] + sorted(filtered_schools["school_type"].dropna().unique().tolist()))
         with col2:
             if school_type != "전체":
                 filtered_schools = filtered_schools[filtered_schools["school_type"] == school_type]
