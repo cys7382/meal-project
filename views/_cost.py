@@ -13,7 +13,7 @@ def load_cost_data():
 
 def show():
     st.title("💰 원가 분석")
-    with st.spinner("데이터 불러오는 중..."):
+    with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df = load_cost_data()
     if df.empty:
         st.info("분류 완료 후 확인 가능합니다.")
