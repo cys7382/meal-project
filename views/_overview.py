@@ -150,9 +150,7 @@ def show_school(df_schools, df_classified):
         df_meals = load_school_meals(school_code)
 
     if df_meals.empty:
-        st.warning("해당 부대의 급식 데이터를 불러오지 못했습니다. 다시 시도해주세요.")
-        if st.button("🔄 다시 시도"):
-            st.rerun()
+        st.warning("데이터를 불러오지 못했습니다. 페이지를 새로고침 해주세요.")
         return
 
     df_meals["meal_date"] = pd.to_datetime(df_meals["meal_date"])
