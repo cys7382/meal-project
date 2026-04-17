@@ -45,24 +45,31 @@ def load_classified():
 
 def load_school_meals(school_code):
     client = get_client()
-    all_data = []
-    page = 0
-    while True:
-        for attempt in range(3):
-            try:
-                res = client.table("meals").select("dish_name, meal_date").eq(
-                    "school_code", str(school_code)
-                ).range(page*1000, (page+1)*1000-1).execute()
-                all_data.extend(res.data)
-                if len(res.data) < 1000:
-                    return pd.DataFrame(all_data)
-                page += 1
-                break
-            except:
-                if attempt == 2:
-                    return pd.DataFrame(all_data)
-                time.sleep(1)
-    return pd.DataFrame(all_data)
+    for outer_attempt in range(3):  # 전체 3번 재시도
+        try:
+            all_data = []
+            page = 0
+            while True:
+                for attempt in range(3):
+                    try:
+                        res = client.table("meals").select("dish_name, meal_date").eq(
+                            "school_code", str(school_code)
+                        ).range(page*1000, (page+1)*1000-1).execute()
+                        all_data.extend(res.data)
+                        if len(res.data) < 1000:
+                            return pd.DataFrame(all_data)
+                        page += 1
+                        break
+                    except:
+                        if attempt == 2:
+                            raise
+                        time.sleep(1)
+        except:
+            if outer_attempt < 2:
+                time.sleep(2)
+                continue
+            return pd.DataFrame()
+    return pd.DataFrame()
 
 def show_overall(df_stats, df_classified):
     categories = ["전체"] + sorted(df_classified["category"].dropna().unique().tolist())
