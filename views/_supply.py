@@ -11,7 +11,7 @@ def load_supply():
 
 def show():
     st.title("📦 재료 수급량 분석")
-    with st.spinner("데이터 불러오는 중..."):
+    with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df = load_supply()
 
     if df.empty:
