@@ -95,12 +95,9 @@ def load_school_meals(school_code):
 
 def show_global_charts(df_menu, df_ing, count_col, selected_cat):
     """전체/지역 통계 차트 - DB 집계 테이블 직접 조회"""
-    # 메뉴 필터 및 TOP 20
+    # 카테고리 필터
     if selected_cat != "전체":
-        df_menu = df_menu[df_menu["dish_name"].isin(
-            df_menu["dish_name"]  # category 필터는 ingredient 쪽에서
-        )]
-        df_ing_filtered = df_ing[df_ing["category"] == selected_cat]
+        df_ing_filtered = df_ing[df_ing["category"] == selected_cat] if "category" in df_ing.columns else df_ing
     else:
         df_ing_filtered = df_ing
 
@@ -108,8 +105,11 @@ def show_global_charts(df_menu, df_ing, count_col, selected_cat):
     top.columns = ["메뉴명", "등장횟수"]
 
     # 재료 TOP 20
-    ing_top = df_ing_filtered.groupby("ingredient_name")[count_col].sum().nlargest(20).reset_index()
-    ing_top.columns = ["재료명", "사용횟수"]
+    if not df_ing_filtered.empty and "ingredient_name" in df_ing_filtered.columns and count_col in df_ing_filtered.columns:
+        ing_top = df_ing_filtered.groupby("ingredient_name")[count_col].sum().nlargest(20).reset_index()
+        ing_top.columns = ["재료명", "사용횟수"]
+    else:
+        ing_top = pd.DataFrame(columns=["재료명", "사용횟수"])
 
     # 렌더링
     st.subheader("가장 많이 나온 메뉴 TOP 20")
