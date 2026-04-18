@@ -10,7 +10,7 @@ def load_supply():
     return pd.DataFrame(query_all("supply_stats", "*"))
 
 def show():
-    st.title("📦 재료 수급량 분석")
+    st.title("📦 시기별 재료 사용")
     with st.spinner("데이터 불러오는 중... 첫 로딩 시 1~2분 소요될 수 있습니다 ☕"):
         df = load_supply()
 
